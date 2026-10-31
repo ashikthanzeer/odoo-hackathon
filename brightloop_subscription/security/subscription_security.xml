@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Security Category -->
+    <record id="module_category_brightloop_subscription" model="ir.module.category">
+        <field name="name">Brightloop Subscriptions</field>
+        <field name="description">Manage user roles and permissions for Brightloop Subscription Management.</field>
+        <field name="sequence">25</field>
+    </record>
+
+    <!-- Internal Staff Group -->
+    <record id="group_subscription_user" model="res.groups">
+        <field name="name">Internal Staff</field>
+        <field name="category_id" ref="module_category_brightloop_subscription"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+        <field name="comment">Internal staff members who handle day-to-day subscription operations with restricted administrative access.</field>
+    </record>
+
+    <!-- Subscription Administrator Group -->
+    <record id="group_subscription_manager" model="res.groups">
+        <field name="name">Administrator</field>
+        <field name="category_id" ref="module_category_brightloop_subscription"/>
+        <field name="implied_ids" eval="[(4, ref('group_subscription_user'))]"/>
+        <field name="users" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+        <field name="comment">Administrators who control the entire Brightloop system, configure plans and products, and manage staff members.</field>
+    </record>
+
+    <!-- Multi-company Rule for Subscription Plan -->
+    <record id="subscription_plan_comp_rule" model="ir.rule">
+        <field name="name">Subscription Plan Multi-Company</field>
+        <field name="model_id" ref="model_subscription_plan"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+
+    <!-- Portal Customer Rule: Can read active subscription plans in the public catalog -->
+    <record id="subscription_plan_portal_rule" model="ir.rule">
+        <field name="name">Portal Customer: View Active Plans</field>
+        <field name="model_id" ref="model_subscription_plan"/>
+        <field name="domain_force">[('active', '=', True)]</field>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+</odoo>

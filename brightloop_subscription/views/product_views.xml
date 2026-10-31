@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Product Template Form View Inherit -->
+    <record id="view_product_template_form_subscription" model="ir.ui.view">
+        <field name="name">product.template.form.subscription</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_only_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='options']" position="inside">
+                <span class="d-inline-block">
+                    <field name="is_subscription"/>
+                    <label for="is_subscription"/>
+                </span>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Subscription Settings" name="subscription_settings" invisible="not is_subscription">
+                    <group>
+                        <group string="Billing &amp; Plan Configuration">
+                            <field name="subscription_plan_id"/>
+                        </group>
+                        <group string="Subscription Terms">
+                            <field name="subscription_notes" placeholder="Service notes, SLA terms, support coverage..."/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Product Template Search View Inherit -->
+    <record id="view_product_template_search_subscription" model="ir.ui.view">
+        <field name="name">product.template.search.subscription</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_search_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='filter_to_sell']" position="after">
+                <filter string="Subscription Products" name="filter_is_subscription" domain="[('is_subscription', '=', True)]"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Product Template Tree View Inherit -->
+    <record id="view_product_template_tree_subscription" model="ir.ui.view">
+        <field name="name">product.template.tree.subscription</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_tree_view"/>
+        <field name="arch" type="xml">
+            <field name="list_price" position="after">
+                <field name="is_subscription" optional="show" widget="boolean_toggle"/>
+                <field name="subscription_plan_id" optional="hide"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- Action for Subscription Products -->
+    <record id="action_subscription_products" model="ir.actions.act_window">
+        <field name="name">Subscription Products</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">kanban,tree,form</field>
+        <field name="search_view_id" ref="product.product_template_search_view"/>
+        <field name="context">{'default_is_subscription': True, 'search_default_filter_is_subscription': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Define your first Subscription Product!
+            </p>
+            <p>
+                Configure base pricing, cost price, service notes, and variant attributes (e.g. Brand with price surcharges).
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_subscription_products"
+              name="Subscription Products"
+              parent="menu_brightloop_subscription_catalog"
+              action="action_subscription_products"
+              sequence="20"/>
+</odoo>

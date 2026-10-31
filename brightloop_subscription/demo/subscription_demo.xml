@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Brand Attribute and Values -->
+        <record id="product_attribute_brand" model="product.attribute">
+            <field name="name">Brand</field>
+            <field name="create_variant">always</field>
+        </record>
+
+        <record id="product_attribute_val_standard" model="product.attribute.value">
+            <field name="name">Standard</field>
+            <field name="attribute_id" ref="product_attribute_brand"/>
+            <field name="sequence">1</field>
+        </record>
+
+        <record id="product_attribute_val_odoo" model="product.attribute.value">
+            <field name="name">Odoo</field>
+            <field name="attribute_id" ref="product_attribute_brand"/>
+            <field name="sequence">2</field>
+        </record>
+
+        <!-- Subscription Plans -->
+        <record id="plan_daily" model="subscription.plan">
+            <field name="name">Daily Flex Plan</field>
+            <field name="code">FLEX-D</field>
+            <field name="billing_cycle_unit">daily</field>
+            <field name="billing_interval">1</field>
+            <field name="min_quantity">1.0</field>
+            <field name="auto_close_on_end">False</field>
+            <field name="allow_close_early">True</field>
+            <field name="allow_pause">True</field>
+            <field name="allow_renewal">True</field>
+            <field name="description">Pay-as-you-go daily flex subscription.</field>
+        </record>
+
+        <record id="plan_weekly" model="subscription.plan">
+            <field name="name">Weekly Agile Plan</field>
+            <field name="code">AGILE-W</field>
+            <field name="billing_cycle_unit">weekly</field>
+            <field name="billing_interval">1</field>
+            <field name="min_quantity">1.0</field>
+            <field name="auto_close_on_end">False</field>
+            <field name="allow_close_early">True</field>
+            <field name="allow_pause">True</field>
+            <field name="allow_renewal">True</field>
+            <field name="description">Billed weekly for fast-paced project teams.</field>
+        </record>
+
+        <record id="plan_monthly" model="subscription.plan">
+            <field name="name">Brightloop Pro Monthly</field>
+            <field name="code">PRO-M</field>
+            <field name="billing_cycle_unit">monthly</field>
+            <field name="billing_interval">1</field>
+            <field name="min_quantity">1.0</field>
+            <field name="auto_close_on_end">False</field>
+            <field name="allow_close_early">True</field>
+            <field name="allow_pause">True</field>
+            <field name="allow_renewal">True</field>
+            <field name="description">Standard monthly subscription for small to medium businesses.</field>
+        </record>
+
+        <record id="plan_yearly" model="subscription.plan">
+            <field name="name">Brightloop Enterprise Yearly</field>
+            <field name="code">ENT-Y</field>
+            <field name="billing_cycle_unit">yearly</field>
+            <field name="billing_interval">1</field>
+            <field name="min_quantity">5.0</field>
+            <field name="auto_close_on_end">True</field>
+            <field name="allow_close_early">False</field>
+            <field name="allow_pause">False</field>
+            <field name="allow_renewal">True</field>
+            <field name="description">Yearly contract for large enterprises requiring minimum 5 seats.</field>
+        </record>
+
+        <!-- Subscription Product Template -->
+        <record id="product_brightloop_erp" model="product.template">
+            <field name="name">Brightloop Business Suite</field>
+            <field name="detailed_type">service</field>
+            <field name="list_price">1000.0</field>
+            <field name="standard_price">300.0</field>
+            <field name="is_subscription">True</field>
+            <field name="subscription_plan_id" ref="plan_monthly"/>
+            <field name="description_sale">Comprehensive business management suite with full subscription features.</field>
+            <field name="attribute_line_ids" eval="[(0, 0, {
+                'attribute_id': ref('product_attribute_brand'),
+                'value_ids': [(6, 0, [ref('product_attribute_val_standard'), ref('product_attribute_val_odoo')])]
+            })]"/>
+        </record>
+
+        <!-- Attribute Value Price Extra: Odoo Brand adds 560 to price -->
+        <function model="product.template.attribute.value" name="write">
+            <function model="product.template.attribute.value" name="search">
+                <value eval="[('product_tmpl_id', '=', ref('product_brightloop_erp')), ('product_attribute_value_id', '=', ref('product_attribute_val_odoo'))]"/>
+            </function>
+            <value eval="{'price_extra': 560.0}"/>
+        </function>
+    </data>
+</odoo>
