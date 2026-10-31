@@ -7,10 +7,18 @@
         <field name="sequence">25</field>
     </record>
 
+    <!-- Security Privilege (Odoo 19) -->
+    <record id="res_groups_privilege_subscription" model="res.groups.privilege">
+        <field name="name">Subscriptions</field>
+        <field name="category_id" ref="module_category_brightloop_subscription"/>
+        <field name="sequence">10</field>
+    </record>
+
     <!-- Internal Staff Group -->
     <record id="group_subscription_user" model="res.groups">
         <field name="name">Internal Staff</field>
-        <field name="category_id" ref="module_category_brightloop_subscription"/>
+        <field name="sequence">10</field>
+        <field name="privilege_id" ref="res_groups_privilege_subscription"/>
         <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
         <field name="comment">Internal staff members who handle day-to-day subscription operations with restricted administrative access.</field>
     </record>
@@ -18,9 +26,10 @@
     <!-- Subscription Administrator Group -->
     <record id="group_subscription_manager" model="res.groups">
         <field name="name">Administrator</field>
-        <field name="category_id" ref="module_category_brightloop_subscription"/>
+        <field name="sequence">20</field>
+        <field name="privilege_id" ref="res_groups_privilege_subscription"/>
         <field name="implied_ids" eval="[(4, ref('group_subscription_user'))]"/>
-        <field name="users" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+        <field name="user_ids" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
         <field name="comment">Administrators who control the entire Brightloop system, configure plans and products, and manage staff members.</field>
     </record>
 

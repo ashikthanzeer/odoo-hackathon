@@ -35,7 +35,7 @@ class TestQuotationTemplate(TransactionCase):
         # Setup Product
         cls.product_tmpl = cls.ProductTemplate.create({
             'name': 'Cloud Collaboration Suite',
-            'detailed_type': 'service',
+            'type': 'service',
             'list_price': 150.0,
             'is_subscription': True,
         })

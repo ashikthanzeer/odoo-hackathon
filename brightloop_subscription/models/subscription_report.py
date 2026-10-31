@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo import models, fields, tools
+from odoo import models, fields, tools, api
 
 
 class SubscriptionReport(models.Model):
@@ -8,6 +8,11 @@ class SubscriptionReport(models.Model):
     _auto = False
     _rec_name = 'subscription_id'
     _order = 'mrr desc'
+
+    @api.model
+    def _search(self, *args, **kwargs):
+        self.env['subscription.subscription'].flush_model()
+        return super()._search(*args, **kwargs)
 
     subscription_id = fields.Many2one('subscription.subscription', string='Subscription', readonly=True)
     partner_id = fields.Many2one('res.partner', string='Customer', readonly=True)

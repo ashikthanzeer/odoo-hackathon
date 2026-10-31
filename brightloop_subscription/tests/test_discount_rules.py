@@ -26,7 +26,7 @@ class TestDiscountRules(TransactionCase):
             'name': 'Brightloop Subscription Admin',
             'login': 'sub_admin@brightloop.test',
             'email': 'sub_admin@brightloop.test',
-            'groups_id': [(6, 0, [cls.group_manager.id, cls.env.ref('base.group_user').id])],
+            'group_ids': [(6, 0, [cls.group_manager.id, cls.env.ref('base.group_user').id])],
         })
 
         # Setup Internal Staff User
@@ -34,14 +34,55 @@ class TestDiscountRules(TransactionCase):
             'name': 'Brightloop Sales Staff',
             'login': 'sub_staff@brightloop.test',
             'email': 'sub_staff@brightloop.test',
-            'groups_id': [(6, 0, [cls.group_user.id, cls.env.ref('base.group_user').id])],
+            'group_ids': [(6, 0, [cls.group_user.id, cls.env.ref('base.group_user').id])],
         })
+
+        # Setup Accounts and Sale Journal for Odoo 19 Invoicing
+        company = cls.env.company
+        cls.account_income = cls.env['account.account'].search([
+            ('account_type', '=', 'income'),
+            ('company_ids', 'in', company.id),
+        ], limit=1)
+        if not cls.account_income:
+            cls.account_income = cls.env['account.account'].create({
+                'name': 'Subscription Income',
+                'code': '400030',
+                'account_type': 'income',
+                'company_ids': [(6, 0, [company.id])],
+            })
+
+        cls.account_receivable = cls.env['account.account'].search([
+            ('account_type', '=', 'asset_receivable'),
+            ('company_ids', 'in', company.id),
+        ], limit=1)
+        if not cls.account_receivable:
+            cls.account_receivable = cls.env['account.account'].create({
+                'name': 'Subscription Receivable',
+                'code': '120030',
+                'account_type': 'asset_receivable',
+                'reconcile': True,
+                'company_ids': [(6, 0, [company.id])],
+            })
+
+        cls.sale_journal = cls.env['account.journal'].search([
+            ('type', '=', 'sale'),
+            ('company_id', '=', company.id),
+        ], limit=1)
+        if not cls.sale_journal:
+            cls.sale_journal = cls.env['account.journal'].create({
+                'name': 'Customer Invoices',
+                'code': 'INV',
+                'type': 'sale',
+                'company_id': company.id,
+                'default_account_id': cls.account_income.id,
+            })
 
         # Setup Partner
         cls.customer = cls.PartnerModel.create({
             'name': 'Brightloop Discount Test Customer',
             'email': 'discount_test@brightloop.test',
             'is_subscription_customer': True,
+            'property_account_receivable_id': cls.account_receivable.id,
         })
 
         # Setup Monthly Plan
@@ -56,7 +97,7 @@ class TestDiscountRules(TransactionCase):
         # Setup Subscription Products
         cls.product_tmpl_a = cls.ProductTemplate.create({
             'name': 'Cloud Collaboration Suite',
-            'detailed_type': 'service',
+            'type': 'service',
             'list_price': 100.0,
             'is_subscription': True,
         })
@@ -64,7 +105,7 @@ class TestDiscountRules(TransactionCase):
 
         cls.product_tmpl_b = cls.ProductTemplate.create({
             'name': 'Add-on Dedicated IP',
-            'detailed_type': 'service',
+            'type': 'service',
             'list_price': 50.0,
             'is_subscription': True,
         })

@@ -24,17 +24,23 @@ class TestSubscriptionLifecycle(TransactionCase):
         })
 
         # Tax (10%)
+        tax_group = cls.env['account.tax.group'].search([], limit=1) or cls.env['account.tax.group'].create({'name': 'Test Tax Group'})
+        country = cls.env.company.account_fiscal_country_id or cls.env['res.country'].search([], limit=1)
+        if not cls.env.company.account_fiscal_country_id:
+            cls.env.company.account_fiscal_country_id = country.id
         cls.tax_10 = cls.TaxModel.create({
             'name': 'Test VAT 10%',
             'amount_type': 'percent',
             'amount': 10.0,
             'type_tax_use': 'sale',
+            'tax_group_id': tax_group.id,
+            'country_id': country.id,
         })
 
         # Product
         cls.product_tmpl = cls.ProductTemplate.create({
             'name': 'Brightloop ERP Core',
-            'detailed_type': 'service',
+            'type': 'service',
             'list_price': 500.0,
             'is_subscription': True,
         })

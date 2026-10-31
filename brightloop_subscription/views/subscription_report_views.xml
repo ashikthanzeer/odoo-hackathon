@@ -45,7 +45,7 @@
                 <filter string="Paid" name="filter_paid" domain="[('payment_status', '=', 'paid')]"/>
                 <filter string="Pending Payment" name="filter_pending" domain="[('payment_status', '=', 'pending')]"/>
                 <filter string="Overdue" name="filter_overdue" domain="[('payment_status', '=', 'overdue')]"/>
-                <group expand="1" string="Group By">
+                <group>
                     <filter string="Plan" name="group_by_plan" context="{'group_by': 'plan_id'}"/>
                     <filter string="Customer" name="group_by_partner" context="{'group_by': 'partner_id'}"/>
                     <filter string="Status" name="group_by_state" context="{'group_by': 'state'}"/>
@@ -74,4 +74,12 @@
             </p>
         </field>
     </record>
+
+    <!-- Menu Item for Analytics -->
+    <menuitem id="menu_subscription_analytics"
+              name="Subscription Analytics"
+              parent="menu_brightloop_subscription_reporting"
+              action="action_subscription_report_all"
+              sequence="10"/>
 </odoo>
+

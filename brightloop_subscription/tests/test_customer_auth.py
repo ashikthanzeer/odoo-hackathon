@@ -13,13 +13,17 @@ class TestCustomerAuth(TransactionCase):
         cls.group_staff = cls.env.ref('brightloop_subscription.group_subscription_user')
         cls.group_manager = cls.env.ref('brightloop_subscription.group_subscription_manager')
 
-        # Create an administrative user
+        # Create an administrative user with settings access to manage users
         cls.admin_user = cls.ResUsers.create({
             'name': 'Subscription Admin',
             'login': 'sub_admin@brightloop.test',
             'email': 'sub_admin@brightloop.test',
             'password': 'AdminSecurePassword@123',
-            'groups_id': [(6, 0, [cls.group_manager.id, cls.env.ref('base.group_user').id])]
+            'group_ids': [(6, 0, [
+                cls.group_manager.id,
+                cls.env.ref('base.group_user').id,
+                cls.env.ref('base.group_system').id,
+            ])]
         })
 
         # Create a standard internal staff user
@@ -28,7 +32,7 @@ class TestCustomerAuth(TransactionCase):
             'login': 'staff_user@brightloop.test',
             'email': 'staff_user@brightloop.test',
             'password': 'StaffSecurePassword#456',
-            'groups_id': [(6, 0, [cls.group_staff.id, cls.env.ref('base.group_user').id])]
+            'group_ids': [(6, 0, [cls.group_staff.id, cls.env.ref('base.group_user').id])]
         })
 
     def test_01_password_complexity_length(self):
@@ -105,5 +109,5 @@ class TestCustomerAuth(TransactionCase):
                 'login': 'unauth_staff@brightloop.test',
                 'email': 'unauth_staff@brightloop.test',
                 'password': 'ValidStaffPass$789',
-                'groups_id': [(6, 0, [self.group_staff.id])]
+                'group_ids': [(6, 0, [self.group_staff.id])]
             })

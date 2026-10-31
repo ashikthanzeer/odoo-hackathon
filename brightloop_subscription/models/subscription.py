@@ -281,7 +281,8 @@ class Subscription(models.Model):
             total_qty = sum(line.quantity for line in sub.line_ids)
 
             discount_amount = 0.0
-            if sub.discount_rule_id and sub.discount_rule_id.is_eligible(sub):
+            eval_date = sub.start_date or fields.Date.context_today(sub)
+            if sub.discount_rule_id and sub.discount_rule_id.is_eligible(sub, evaluation_date=eval_date):
                 discount_amount = sub.discount_rule_id.compute_discount_amount(sub)
 
             amount_net = max(0.0, amount_total - discount_amount)
@@ -467,14 +468,37 @@ class Subscription(models.Model):
 
         # Construct Invoice Lines
         invoice_lines = []
+        # Locate or assign sale journal
+        journal = self.env['account.journal'].search([
+            ('type', '=', 'sale'),
+            ('company_id', '=', self.company_id.id),
+        ], limit=1)
+
+        income_account = False
+        if journal and journal.default_account_id:
+            income_account = journal.default_account_id
+        if not income_account:
+            income_account = self.env['account.account'].search([
+                ('account_type', '=', 'income'),
+                ('company_ids', 'in', self.company_id.id),
+            ], limit=1)
+
         for line in self.line_ids:
-            invoice_lines.append((0, 0, {
+            line_vals = {
                 'product_id': line.product_id.id,
                 'name': line.name or line.product_id.display_name,
                 'quantity': line.quantity,
                 'price_unit': line.price_unit,
                 'tax_ids': [(6, 0, line.tax_ids.ids)],
-            }))
+            }
+            line_income = (
+                line.product_id.property_account_income_id or
+                line.product_id.categ_id.property_account_income_categ_id or
+                income_account
+            )
+            if line_income:
+                line_vals['account_id'] = line_income.id
+            invoice_lines.append((0, 0, line_vals))
 
         # Evaluate and apply discount rule if eligible
         discount_rule = self.discount_rule_id
@@ -484,11 +508,14 @@ class Subscription(models.Model):
                 disc_name = _('Discount: %s') % discount_rule.name
                 if discount_rule.code:
                     disc_name += f' ({discount_rule.code})'
-                invoice_lines.append((0, 0, {
+                disc_vals = {
                     'name': disc_name,
                     'quantity': 1.0,
                     'price_unit': -disc_amt,
-                }))
+                }
+                if income_account:
+                    disc_vals['account_id'] = income_account.id
+                invoice_lines.append((0, 0, disc_vals))
                 discount_rule.sudo().write({'current_usage_count': discount_rule.current_usage_count + 1})
 
         # Create Customer Invoice (account.move)
@@ -503,6 +530,10 @@ class Subscription(models.Model):
             'narration': self.notes,
             'invoice_line_ids': invoice_lines,
         }
+        if journal:
+            invoice_vals['journal_id'] = journal.id
+        if not self.payment_term_id:
+            invoice_vals['invoice_date_due'] = billing_date
         invoice = self.env['account.move'].create(invoice_vals)
 
         # Advance billing schedule

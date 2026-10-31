@@ -5,7 +5,7 @@
         <field name="name">subscription.discount.rule.tree</field>
         <field name="model">subscription.discount.rule</field>
         <field name="arch" type="xml">
-            <tree string="Discount Rules" decoration-muted="not active">
+            <list string="Discount Rules" decoration-muted="not active">
                 <field name="name"/>
                 <field name="code"/>
                 <field name="discount_type"/>
@@ -18,7 +18,7 @@
                 <field name="current_usage_count"/>
                 <field name="max_usage_limit"/>
                 <field name="active" widget="boolean_toggle"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -94,7 +94,7 @@
                 <separator/>
                 <filter string="Percentage" name="filter_percentage" domain="[('discount_type', '=', 'percentage')]"/>
                 <filter string="Fixed Amount" name="filter_fixed" domain="[('discount_type', '=', 'fixed')]"/>
-                <group expand="0" string="Group By">
+                <group>
                     <filter string="Type" name="group_by_type" context="{'group_by': 'discount_type'}"/>
                     <filter string="Scope" name="group_by_scope" context="{'group_by': 'scope'}"/>
                 </group>
@@ -106,7 +106,7 @@
     <record id="action_subscription_discount_rule" model="ir.actions.act_window">
         <field name="name">Discount Rules</field>
         <field name="res_model">subscription.discount.rule</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_subscription_discount_rule_search"/>
         <field name="context">{'search_default_filter_active': 1}</field>
         <field name="help" type="html">

@@ -40,7 +40,7 @@ class TestSubscriptionProduct(TransactionCase):
         """Verify product template fields for subscription."""
         template = self.ProductTemplate.create({
             'name': 'Brightloop Core CRM',
-            'detailed_type': 'service',
+            'type': 'service',
             'list_price': 1200.0,
             'standard_price': 400.0,
             'is_subscription': True,
@@ -56,7 +56,7 @@ class TestSubscriptionProduct(TransactionCase):
         """Verify Odoo brand attribute adds 560 to base sales price."""
         template = self.ProductTemplate.create({
             'name': 'Brightloop Platform Enterprise',
-            'detailed_type': 'service',
+            'type': 'service',
             'list_price': 1000.0,
             'standard_price': 350.0,
             'is_subscription': True,

@@ -144,7 +144,7 @@ class SubscriptionDiscountRule(models.Model):
         if not self.active:
             return False
 
-        eval_date = evaluation_date or fields.Date.context_today(self)
+        eval_date = evaluation_date or subscription.start_date or fields.Date.context_today(self)
         if self.start_date and eval_date < self.start_date:
             return False
         if self.end_date and eval_date > self.end_date:
@@ -162,8 +162,8 @@ class SubscriptionDiscountRule(models.Model):
             qty = sum(l.quantity for l in matching_lines)
             amt = sum(l.price_subtotal for l in matching_lines)
         else:
-            qty = subscription.total_quantity
-            amt = subscription.amount_untaxed
+            qty = sum(l.quantity for l in subscription.line_ids)
+            amt = sum(l.price_subtotal for l in subscription.line_ids)
 
         if self.min_quantity > 0 and qty < self.min_quantity:
             return False
@@ -179,7 +179,7 @@ class SubscriptionDiscountRule(models.Model):
             matching_lines = subscription.line_ids.filtered(lambda l: l.product_id in self.product_ids)
             base_amount = sum(l.price_subtotal for l in matching_lines)
         else:
-            base_amount = subscription.amount_untaxed
+            base_amount = sum(l.price_subtotal for l in subscription.line_ids)
 
         if self.discount_type == 'percentage':
             discount = (base_amount * self.discount_value) / 100.0
@@ -187,3 +187,4 @@ class SubscriptionDiscountRule(models.Model):
             discount = min(self.discount_value, base_amount)
 
         return round(discount, 2)
+

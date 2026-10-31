@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Brightloop Subscription Management',
-    'version': '17.0.1.0.0',
+    'version': '19.0.1.0.0',
     'category': 'Sales/Subscriptions',
     'summary': 'Manage plans, subscriptions, quotation templates, recurring billing, and invoices for Brightloop Software',
     'author': 'Brightloop Software / Hackathon Team',
-    'website': 'https://brightloop.example.com',
+    'website': 'https://github.com/ashikthanzeer/odoo-hackathon',
     'license': 'LGPL-3',
     'depends': [
         'base',

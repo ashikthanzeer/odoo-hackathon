@@ -68,7 +68,7 @@ class TestSubscriptionAnalytics(TransactionCase):
         # Setup Product
         cls.product_tmpl = cls.ProductTemplate.create({
             'name': 'Analytics Test Service',
-            'detailed_type': 'service',
+            'type': 'service',
             'list_price': 100.0,
             'is_subscription': True,
         })
@@ -80,7 +80,7 @@ class TestSubscriptionAnalytics(TransactionCase):
             'name': 'Analytics Sales Rep',
             'login': 'analytics_rep@brightloop.test',
             'email': 'analytics_rep@brightloop.test',
-            'groups_id': [(6, 0, [cls.group_user.id, cls.env.ref('base.group_user').id])],
+            'group_ids': [(6, 0, [cls.group_user.id, cls.env.ref('base.group_user').id])],
         })
 
     def test_01_recurring_revenue_normalization_all_units(self):
@@ -200,6 +200,7 @@ class TestSubscriptionAnalytics(TransactionCase):
             })]
         })
         sub.action_confirm()
+        self.env.flush_all()
 
         report_records = self.ReportModel.search([('subscription_id', '=', sub.id)])
         self.assertTrue(report_records)

@@ -18,19 +18,66 @@ class TestBillingEngine(TransactionCase):
         cls.MoveModel = cls.env['account.move']
         cls.WizardModel = cls.env['subscription.billing.wizard']
 
+        # Setup Accounts and Sale Journal for Odoo 19 Invoicing
+        company = cls.env.company
+        cls.account_income = cls.env['account.account'].search([
+            ('account_type', '=', 'income'),
+            ('company_ids', 'in', company.id),
+        ], limit=1)
+        if not cls.account_income:
+            cls.account_income = cls.env['account.account'].create({
+                'name': 'Subscription Income',
+                'code': '400020',
+                'account_type': 'income',
+                'company_ids': [(6, 0, [company.id])],
+            })
+
+        cls.account_receivable = cls.env['account.account'].search([
+            ('account_type', '=', 'asset_receivable'),
+            ('company_ids', 'in', company.id),
+        ], limit=1)
+        if not cls.account_receivable:
+            cls.account_receivable = cls.env['account.account'].create({
+                'name': 'Subscription Receivable',
+                'code': '120020',
+                'account_type': 'asset_receivable',
+                'reconcile': True,
+                'company_ids': [(6, 0, [company.id])],
+            })
+
+        cls.sale_journal = cls.env['account.journal'].search([
+            ('type', '=', 'sale'),
+            ('company_id', '=', company.id),
+        ], limit=1)
+        if not cls.sale_journal:
+            cls.sale_journal = cls.env['account.journal'].create({
+                'name': 'Customer Invoices',
+                'code': 'INV',
+                'type': 'sale',
+                'company_id': company.id,
+                'default_account_id': cls.account_income.id,
+            })
+
         # Setup Partner
         cls.customer = cls.PartnerModel.create({
             'name': 'Brightloop Billing Test Customer',
             'email': 'billing_test@brightloop.test',
             'is_subscription_customer': True,
+            'property_account_receivable_id': cls.account_receivable.id,
         })
 
         # Setup Tax (15% VAT)
+        tax_group = cls.env['account.tax.group'].search([], limit=1) or cls.env['account.tax.group'].create({'name': 'Test Tax Group'})
+        country = cls.env.company.account_fiscal_country_id or cls.env['res.country'].search([], limit=1)
+        if not cls.env.company.account_fiscal_country_id:
+            cls.env.company.account_fiscal_country_id = country.id
         cls.tax_15 = cls.TaxModel.create({
             'name': 'Test VAT 15%',
             'amount_type': 'percent',
             'amount': 15.0,
             'type_tax_use': 'sale',
+            'tax_group_id': tax_group.id,
+            'country_id': country.id,
         })
 
         # Setup Monthly Plan
@@ -45,7 +92,7 @@ class TestBillingEngine(TransactionCase):
         # Setup Subscription Product
         cls.product_tmpl = cls.ProductTemplate.create({
             'name': 'Cloud Server Instance',
-            'detailed_type': 'service',
+            'type': 'service',
             'list_price': 200.0,
             'is_subscription': True,
             'taxes_id': [(6, 0, [cls.tax_15.id])],

@@ -100,9 +100,10 @@ class SubscriptionPlan(models.Model):
         help='Public description and terms shown to customers on quotes and portal.'
     )
 
-    _sql_constraints = [
-        ('code_unique', 'unique(code, company_id)', 'The Plan Code must be unique per company!')
-    ]
+    _code_company_unique = models.Constraint(
+        'UNIQUE (code, company_id)',
+        'The Plan Code must be unique per company!'
+    )
 
     @api.constrains('billing_interval')
     def _check_billing_interval(self):

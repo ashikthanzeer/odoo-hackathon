@@ -75,7 +75,7 @@
         <!-- Subscription Product Template -->
         <record id="product_brightloop_erp" model="product.template">
             <field name="name">Brightloop Business Suite</field>
-            <field name="detailed_type">service</field>
+            <field name="type">service</field>
             <field name="list_price">1000.0</field>
             <field name="standard_price">300.0</field>
             <field name="is_subscription">True</field>

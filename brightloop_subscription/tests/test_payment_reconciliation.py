@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from datetime import date
 from dateutil.relativedelta import relativedelta
+from odoo import fields
 from odoo.tests.common import TransactionCase
 from odoo.exceptions import ValidationError, UserError
 
@@ -16,11 +17,52 @@ class TestPaymentReconciliation(TransactionCase):
         cls.PartnerModel = cls.env['res.partner']
         cls.MoveModel = cls.env['account.move']
 
+        # Setup Accounts and Sale Journal for Odoo 19 Invoicing
+        company = cls.env.company
+        cls.account_income = cls.env['account.account'].search([
+            ('account_type', '=', 'income'),
+            ('company_ids', 'in', company.id),
+        ], limit=1)
+        if not cls.account_income:
+            cls.account_income = cls.env['account.account'].create({
+                'name': 'Subscription Income',
+                'code': '400010',
+                'account_type': 'income',
+                'company_ids': [(6, 0, [company.id])],
+            })
+
+        cls.account_receivable = cls.env['account.account'].search([
+            ('account_type', '=', 'asset_receivable'),
+            ('company_ids', 'in', company.id),
+        ], limit=1)
+        if not cls.account_receivable:
+            cls.account_receivable = cls.env['account.account'].create({
+                'name': 'Subscription Receivable',
+                'code': '120010',
+                'account_type': 'asset_receivable',
+                'reconcile': True,
+                'company_ids': [(6, 0, [company.id])],
+            })
+
+        cls.sale_journal = cls.env['account.journal'].search([
+            ('type', '=', 'sale'),
+            ('company_id', '=', company.id),
+        ], limit=1)
+        if not cls.sale_journal:
+            cls.sale_journal = cls.env['account.journal'].create({
+                'name': 'Customer Invoices',
+                'code': 'INV',
+                'type': 'sale',
+                'company_id': company.id,
+                'default_account_id': cls.account_income.id,
+            })
+
         # Setup Customer
         cls.customer = cls.PartnerModel.create({
             'name': 'Brightloop Payment Customer',
             'email': 'payment_test@brightloop.test',
             'is_subscription_customer': True,
+            'property_account_receivable_id': cls.account_receivable.id,
         })
 
         # Setup Monthly Plan allowing renewal and auto close on end
@@ -48,7 +90,7 @@ class TestPaymentReconciliation(TransactionCase):
         # Setup Product
         cls.product_tmpl = cls.ProductTemplate.create({
             'name': 'Cloud Database Enterprise',
-            'detailed_type': 'service',
+            'type': 'service',
             'list_price': 250.0,
             'is_subscription': True,
         })

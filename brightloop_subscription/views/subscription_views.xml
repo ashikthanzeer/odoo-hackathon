@@ -5,7 +5,7 @@
         <field name="name">subscription.subscription.tree</field>
         <field name="model">subscription.subscription</field>
         <field name="arch" type="xml">
-            <tree string="Subscriptions" decoration-info="state == 'draft'"
+            <list string="Subscriptions" decoration-info="state == 'draft'"
                   decoration-primary="state == 'quotation'"
                   decoration-warning="state == 'confirmed'"
                   decoration-success="state == 'active'"
@@ -38,7 +38,7 @@
                        decoration-success="state == 'active'"
                        decoration-danger="state == 'paused'"
                        decoration-muted="state == 'closed'"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -106,7 +106,7 @@
                     <notebook>
                         <page string="Subscription Lines" name="lines_page">
                             <field name="line_ids">
-                                <tree editable="bottom">
+                                <list editable="bottom">
                                     <field name="product_id"/>
                                     <field name="name"/>
                                     <field name="quantity"/>
@@ -114,7 +114,7 @@
                                     <field name="tax_ids" widget="many2many_tags" options="{'no_create': True}"/>
                                     <field name="price_subtotal" widget="monetary"/>
                                     <field name="currency_id" invisible="1"/>
-                                </tree>
+                                </list>
                             </field>
                             <group col="6" class="mt-2 mt-md-0">
                                 <group colspan="4">
@@ -216,7 +216,7 @@
                 <filter string="Paid" name="filter_paid" domain="[('payment_status', '=', 'paid')]"/>
                 <filter string="Pending Payment" name="filter_pending" domain="[('payment_status', '=', 'pending')]"/>
                 <filter string="Payment Overdue" name="filter_overdue" domain="[('payment_status', '=', 'overdue')]"/>
-                <group expand="0" string="Group By">
+                <group>
                     <filter string="Status" name="group_by_state" context="{'group_by': 'state'}"/>
                     <filter string="Payment Status" name="group_by_payment_status" context="{'group_by': 'payment_status'}"/>
                     <filter string="Customer" name="group_by_customer" context="{'group_by': 'partner_id'}"/>
@@ -231,7 +231,7 @@
     <record id="action_subscription_all" model="ir.actions.act_window">
         <field name="name">Subscriptions &amp; Quotations</field>
         <field name="res_model">subscription.subscription</field>
-        <field name="view_mode">kanban,tree,form</field>
+        <field name="view_mode">kanban,list,form</field>
         <field name="search_view_id" ref="view_subscription_search"/>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
@@ -246,7 +246,7 @@
     <record id="action_subscription_quotations" model="ir.actions.act_window">
         <field name="name">Quotations</field>
         <field name="res_model">subscription.subscription</field>
-        <field name="view_mode">tree,kanban,form</field>
+        <field name="view_mode">list,kanban,form</field>
         <field name="search_view_id" ref="view_subscription_search"/>
         <field name="domain">[('state', 'in', ('draft', 'quotation'))]</field>
         <field name="context">{'default_state': 'draft'}</field>

@@ -28,7 +28,7 @@ class ProductTemplate(models.Model):
             'name': _('Product Variants & Pricing'),
             'type': 'ir.actions.act_window',
             'res_model': 'product.product',
-            'view_mode': 'tree,form',
+            'view_mode': 'list,form',
             'domain': [('product_tmpl_id', '=', self.id)],
             'context': {'default_product_tmpl_id': self.id},
         }

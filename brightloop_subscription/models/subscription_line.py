@@ -93,6 +93,21 @@ class SubscriptionLine(models.Model):
             if self.product_id.taxes_id:
                 self.tax_ids = self.product_id.taxes_id
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if not vals.get('name'):
+                if vals.get('product_id'):
+                    product = self.env['product.product'].browse(vals['product_id'])
+                    vals['name'] = (
+                        product.get_product_multiline_description_sale()
+                        if hasattr(product, 'get_product_multiline_description_sale')
+                        else product.display_name
+                    ) or '/'
+                else:
+                    vals['name'] = '/'
+        return super().create(vals_list)
+
     @api.constrains('quantity')
     def _check_quantity(self):
         for line in self:
@@ -100,3 +115,4 @@ class SubscriptionLine(models.Model):
                 raise ValidationError(_(
                     'Line quantity must be strictly greater than zero.'
                 ))
+
