@@ -2,3 +2,6 @@
 from . import test_customer_auth
 from . import test_subscription_product
 from . import test_subscription_plan
+from . import test_quotation_template
+from . import test_subscription_lifecycle
+from . import test_billing_engine

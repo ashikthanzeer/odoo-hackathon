@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Billing Wizard Form View -->
+    <record id="view_subscription_billing_wizard_form" model="ir.ui.view">
+        <field name="name">subscription.billing.wizard.form</field>
+        <field name="model">subscription.billing.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Batch Subscription Billing">
+                <p class="text-muted">
+                    Generate recurring customer invoices for all active subscriptions due on or before the specified billing target date.
+                </p>
+                <group>
+                    <field name="billing_date"/>
+                    <field name="due_count" readonly="1" string="Subscriptions Due for Billing"/>
+                </group>
+                <notebook>
+                    <page string="Due Subscriptions" name="due_subs_page">
+                        <field name="due_subscription_ids">
+                            <tree create="false">
+                                <field name="name"/>
+                                <field name="partner_id"/>
+                                <field name="plan_id"/>
+                                <field name="next_billing_date"/>
+                                <field name="amount_total" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                <field name="currency_id" invisible="1"/>
+                            </tree>
+                        </field>
+                    </page>
+                </notebook>
+                <footer>
+                    <button name="action_process_billing" string="Generate Recurring Invoices" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action for Billing Wizard -->
+    <record id="action_subscription_billing_wizard" model="ir.actions.act_window">
+        <field name="name">Generate Due Invoices</field>
+        <field name="res_model">subscription.billing.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- Menu Item for Billing Wizard -->
+    <menuitem id="menu_subscription_billing_wizard"
+              name="Generate Due Invoices"
+              parent="menu_brightloop_subscription_operations"
+              action="action_subscription_billing_wizard"
+              sequence="15"/>
+</odoo>
