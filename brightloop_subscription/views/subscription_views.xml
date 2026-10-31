@@ -18,6 +18,8 @@
                 <field name="next_billing_date" optional="show"/>
                 <field name="expiry_date" optional="hide"/>
                 <field name="amount_total" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                <field name="amount_net" widget="monetary" options="{'currency_field': 'currency_id'}" optional="show"/>
+                <field name="discount_rule_id" optional="hide"/>
                 <field name="currency_id" invisible="1"/>
                 <field name="state" widget="badge"
                        decoration-info="state == 'draft'"
@@ -63,6 +65,7 @@
                             <field name="partner_id" widget="res_partner_many2one"/>
                             <field name="plan_id"/>
                             <field name="template_id"/>
+                            <field name="discount_rule_id" options="{'no_create': True}"/>
                             <field name="payment_term_id"/>
                         </group>
                         <group string="Contract &amp; Billing Schedule">
@@ -95,10 +98,12 @@
                                 <group class="oe_subtotal_footer oe_right" colspan="2" name="subscription_total">
                                     <field name="amount_untaxed"/>
                                     <field name="amount_tax"/>
+                                    <field name="amount_total"/>
+                                    <field name="discount_amount" invisible="discount_amount == 0"/>
                                     <div class="oe_subtotal_footer_separator oe_inline o_td_label">
-                                        <label for="amount_total"/>
+                                        <label for="amount_net"/>
                                     </div>
-                                    <field name="amount_total" nolabel="1" class="oe_subtotal_footer_separator"/>
+                                    <field name="amount_net" nolabel="1" class="oe_subtotal_footer_separator"/>
                                 </group>
                                 <div class="oe_clear"/>
                             </group>
@@ -168,8 +173,10 @@
                 <field name="name"/>
                 <field name="partner_id"/>
                 <field name="plan_id"/>
+                <field name="discount_rule_id"/>
                 <filter string="Quotations" name="filter_quotations" domain="[('state', 'in', ('draft', 'quotation'))]"/>
                 <filter string="Active" name="filter_active" domain="[('state', '=', 'active')]"/>
+                <filter string="Discounted" name="filter_discounted" domain="[('discount_rule_id', '!=', False)]"/>
                 <filter string="Billing Due" name="filter_billing_due" domain="[('state', '=', 'active'), ('next_billing_date', '&lt;=', context_today())]"/>
                 <filter string="Paused" name="filter_paused" domain="[('state', '=', 'paused')]"/>
                 <filter string="Closed" name="filter_closed" domain="[('state', '=', 'closed')]"/>

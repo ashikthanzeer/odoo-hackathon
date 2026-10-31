@@ -110,6 +110,19 @@ class Subscription(models.Model):
         compute='_compute_amounts',
         store=True
     )
+    discount_rule_id = fields.Many2one(
+        'subscription.discount.rule',
+        string='Discount Rule',
+        domain="[('active', '=', True)]",
+        tracking=True,
+        help='Promotional or volume discount rule applied to this contract.'
+    )
+    discount_amount = fields.Monetary(
+        string='Discount Amount',
+        compute='_compute_amounts',
+        store=True,
+        currency_field='currency_id'
+    )
     amount_untaxed = fields.Monetary(
         string='Untaxed Amount',
         compute='_compute_amounts',
@@ -125,6 +138,13 @@ class Subscription(models.Model):
     )
     amount_total = fields.Monetary(
         string='Total Amount',
+        compute='_compute_amounts',
+        store=True,
+        currency_field='currency_id',
+        tracking=True
+    )
+    amount_net = fields.Monetary(
+        string='Net Total',
         compute='_compute_amounts',
         store=True,
         currency_field='currency_id',
@@ -150,17 +170,25 @@ class Subscription(models.Model):
         for sub in self:
             sub.invoice_count = len(sub.invoice_ids)
 
-    @api.depends('line_ids.price_subtotal', 'line_ids.price_tax', 'line_ids.price_total', 'line_ids.quantity')
+    @api.depends('line_ids.price_subtotal', 'line_ids.price_tax', 'line_ids.price_total', 'line_ids.quantity', 'discount_rule_id', 'discount_rule_id.discount_type', 'discount_rule_id.discount_value', 'discount_rule_id.active')
     def _compute_amounts(self):
         for sub in self:
             amount_untaxed = sum(line.price_subtotal for line in sub.line_ids)
             amount_tax = sum(line.price_tax for line in sub.line_ids)
             amount_total = sum(line.price_total for line in sub.line_ids)
             total_qty = sum(line.quantity for line in sub.line_ids)
+
+            discount_amount = 0.0
+            if sub.discount_rule_id and sub.discount_rule_id.is_eligible(sub):
+                discount_amount = sub.discount_rule_id.compute_discount_amount(sub)
+
+            amount_net = max(0.0, amount_total - discount_amount)
             sub.update({
                 'amount_untaxed': amount_untaxed,
                 'amount_tax': amount_tax,
                 'amount_total': amount_total,
+                'discount_amount': discount_amount,
+                'amount_net': amount_net,
                 'total_quantity': total_qty,
             })
 
@@ -317,6 +345,21 @@ class Subscription(models.Model):
                 'price_unit': line.price_unit,
                 'tax_ids': [(6, 0, line.tax_ids.ids)],
             }))
+
+        # Evaluate and apply discount rule if eligible
+        discount_rule = self.discount_rule_id
+        if discount_rule and discount_rule.is_eligible(self, evaluation_date=billing_date):
+            disc_amt = discount_rule.compute_discount_amount(self)
+            if disc_amt > 0:
+                disc_name = _('Discount: %s') % discount_rule.name
+                if discount_rule.code:
+                    disc_name += f' ({discount_rule.code})'
+                invoice_lines.append((0, 0, {
+                    'name': disc_name,
+                    'quantity': 1.0,
+                    'price_unit': -disc_amt,
+                }))
+                discount_rule.sudo().write({'current_usage_count': discount_rule.current_usage_count + 1})
 
         # Create Customer Invoice (account.move)
         invoice_vals = {

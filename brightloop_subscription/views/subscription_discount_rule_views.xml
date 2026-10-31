@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Subscription Discount Rule Tree View -->
+    <record id="view_subscription_discount_rule_tree" model="ir.ui.view">
+        <field name="name">subscription.discount.rule.tree</field>
+        <field name="model">subscription.discount.rule</field>
+        <field name="arch" type="xml">
+            <tree string="Discount Rules" decoration-muted="not active">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="discount_type"/>
+                <field name="discount_value"/>
+                <field name="scope"/>
+                <field name="min_quantity"/>
+                <field name="min_amount"/>
+                <field name="start_date"/>
+                <field name="end_date"/>
+                <field name="current_usage_count"/>
+                <field name="max_usage_limit"/>
+                <field name="active" widget="boolean_toggle"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Subscription Discount Rule Form View -->
+    <record id="view_subscription_discount_rule_form" model="ir.ui.view">
+        <field name="name">subscription.discount.rule.form</field>
+        <field name="model">subscription.discount.rule</field>
+        <field name="arch" type="xml">
+            <form string="Discount Rule">
+                <sheet>
+                    <widget name="web_ribbon" title="Archived" bg_color="bg-danger" invisible="active"/>
+                    <div class="oe_title">
+                        <label for="name" string="Rule Name"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. 10% Volume Discount, Startup Launch Credit"/>
+                        </h1>
+                        <div class="o_row">
+                            <label for="code" string="Discount Code:"/>
+                            <field name="code" placeholder="e.g. VOL10, LAUNCH50" class="oe_inline"/>
+                            <field name="active" invisible="1"/>
+                        </div>
+                    </div>
+                    <group>
+                        <group string="Discount Configuration">
+                            <field name="discount_type"/>
+                            <label for="discount_value" string="Value"/>
+                            <div class="o_row">
+                                <field name="discount_value" class="oe_inline"/>
+                                <span class="text-muted" invisible="discount_type != 'percentage'">%</span>
+                                <span class="text-muted" invisible="discount_type == 'percentage'">fixed amount</span>
+                            </div>
+                            <field name="scope"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group string="Usage Limits &amp; Tracking">
+                            <field name="max_usage_limit"/>
+                            <field name="current_usage_count"/>
+                        </group>
+                    </group>
+                    <group string="Applicable Products" invisible="scope != 'specific_products'">
+                        <field name="product_ids" widget="many2many_tags" placeholder="Select products eligible for this discount..." invisible="scope != 'specific_products'"/>
+                    </group>
+                    <group string="Eligibility Thresholds &amp; Validity">
+                        <group>
+                            <field name="min_quantity"/>
+                            <field name="min_amount"/>
+                        </group>
+                        <group>
+                            <field name="start_date"/>
+                            <field name="end_date"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Terms &amp; Conditions" name="description_page">
+                            <field name="description" placeholder="Internal or contract terms and conditions..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Subscription Discount Rule Search View -->
+    <record id="view_subscription_discount_rule_search" model="ir.ui.view">
+        <field name="name">subscription.discount.rule.search</field>
+        <field name="model">subscription.discount.rule</field>
+        <field name="arch" type="xml">
+            <search string="Search Discount Rules">
+                <field name="name"/>
+                <field name="code"/>
+                <filter string="Active" name="filter_active" domain="[('active', '=', True)]"/>
+                <filter string="Archived" name="filter_archived" domain="[('active', '=', False)]"/>
+                <separator/>
+                <filter string="Percentage" name="filter_percentage" domain="[('discount_type', '=', 'percentage')]"/>
+                <filter string="Fixed Amount" name="filter_fixed" domain="[('discount_type', '=', 'fixed')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Type" name="group_by_type" context="{'group_by': 'discount_type'}"/>
+                    <filter string="Scope" name="group_by_scope" context="{'group_by': 'scope'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action for Discount Rules -->
+    <record id="action_subscription_discount_rule" model="ir.actions.act_window">
+        <field name="name">Discount Rules</field>
+        <field name="res_model">subscription.discount.rule</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_subscription_discount_rule_search"/>
+        <field name="context">{'search_default_filter_active': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first Discount Rule!
+            </p>
+            <p>
+                Configure percentage or fixed discounts, volume thresholds, validity dates, and usage limits.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item for Discount Rules -->
+    <menuitem id="menu_subscription_discount_rule"
+              name="Discount Rules"
+              parent="menu_brightloop_subscription_config"
+              action="action_subscription_discount_rule"
+              sequence="30"
+              groups="group_subscription_manager"/>
+</odoo>

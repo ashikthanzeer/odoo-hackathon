@@ -8,3 +8,4 @@ from . import subscription_line
 from . import subscription
 from . import account_move
 from . import subscription_billing_wizard
+from . import subscription_discount_rule
