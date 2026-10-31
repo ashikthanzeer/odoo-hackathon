@@ -7,3 +7,4 @@ from . import test_subscription_lifecycle
 from . import test_billing_engine
 from . import test_discount_rules
 from . import test_payment_reconciliation
+from . import test_subscription_analytics
