@@ -31,11 +31,30 @@
         <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
     </record>
 
-    <!-- Portal Customer Rule: Can read active subscription plans in the public catalog -->
+    <!-- Portal Customer Rule: View Active Plans -->
     <record id="subscription_plan_portal_rule" model="ir.rule">
         <field name="name">Portal Customer: View Active Plans</field>
         <field name="model_id" ref="model_subscription_plan"/>
         <field name="domain_force">[('active', '=', True)]</field>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- Multi-company Rule for Subscription Contract -->
+    <record id="subscription_subscription_comp_rule" model="ir.rule">
+        <field name="name">Subscription Multi-Company</field>
+        <field name="model_id" ref="model_subscription_subscription"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+    </record>
+
+    <!-- Portal Customer Rule: Can ONLY view their own Subscriptions -->
+    <record id="subscription_subscription_portal_rule" model="ir.rule">
+        <field name="name">Portal Customer: View Own Subscriptions Only</field>
+        <field name="model_id" ref="model_subscription_subscription"/>
+        <field name="domain_force">[('partner_id', '=', user.partner_id.id)]</field>
         <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="False"/>
