@@ -25,6 +25,19 @@
               parent="menu_brightloop_subscription_root"
               sequence="20"/>
 
+    <!-- Reporting Menus -->
+    <menuitem id="menu_brightloop_subscription_reporting"
+              name="Reporting"
+              parent="menu_brightloop_subscription_root"
+              sequence="50"
+              groups="group_subscription_user,group_subscription_manager"/>
+
+    <menuitem id="menu_subscription_analytics"
+              name="Subscription Analytics"
+              parent="menu_brightloop_subscription_reporting"
+              action="action_subscription_report_all"
+              sequence="10"/>
+
     <!-- Configuration Menu (Administrators Only) -->
     <menuitem id="menu_brightloop_subscription_config"
               name="Configuration"

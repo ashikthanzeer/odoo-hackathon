@@ -19,6 +19,8 @@
                 <field name="expiry_date" optional="hide"/>
                 <field name="amount_total" widget="monetary" options="{'currency_field': 'currency_id'}"/>
                 <field name="amount_net" widget="monetary" options="{'currency_field': 'currency_id'}" optional="show"/>
+                <field name="mrr" widget="monetary" options="{'currency_field': 'currency_id'}" optional="show"/>
+                <field name="arr" widget="monetary" options="{'currency_field': 'currency_id'}" optional="hide"/>
                 <field name="paid_amount" widget="monetary" options="{'currency_field': 'currency_id'}" optional="show"/>
                 <field name="amount_due" widget="monetary" options="{'currency_field': 'currency_id'}" optional="show"/>
                 <field name="discount_rule_id" optional="hide"/>
@@ -92,6 +94,8 @@
                             <field name="next_billing_date"/>
                             <field name="last_billing_date"/>
                             <field name="expiry_date"/>
+                            <field name="mrr" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                            <field name="arr" widget="monetary" options="{'currency_field': 'currency_id'}"/>
                             <field name="paid_amount" widget="monetary" options="{'currency_field': 'currency_id'}"/>
                             <field name="amount_due" widget="monetary" options="{'currency_field': 'currency_id'}"/>
                             <field name="user_id" widget="many2one_avatar_user"/>

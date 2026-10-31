@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Subscription Analytics Pivot View -->
+    <record id="view_subscription_report_pivot" model="ir.ui.view">
+        <field name="name">subscription.report.pivot</field>
+        <field name="model">subscription.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Subscription Analytics" sample="1">
+                <field name="plan_id" type="row"/>
+                <field name="billing_cycle_unit" type="col"/>
+                <field name="mrr" type="measure"/>
+                <field name="arr" type="measure"/>
+                <field name="amount_net" type="measure"/>
+                <field name="amount_due" type="measure"/>
+                <field name="nbr_subscriptions" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Subscription Analytics Graph View -->
+    <record id="view_subscription_report_graph" model="ir.ui.view">
+        <field name="name">subscription.report.graph</field>
+        <field name="model">subscription.report</field>
+        <field name="arch" type="xml">
+            <graph string="Subscription Analytics" type="bar" sample="1">
+                <field name="plan_id"/>
+                <field name="mrr" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Subscription Analytics Search View -->
+    <record id="view_subscription_report_search" model="ir.ui.view">
+        <field name="name">subscription.report.search</field>
+        <field name="model">subscription.report</field>
+        <field name="arch" type="xml">
+            <search string="Subscription Analytics Search">
+                <field name="partner_id"/>
+                <field name="plan_id"/>
+                <field name="user_id"/>
+                <filter string="Active Contracts" name="filter_active" domain="[('state', '=', 'active')]"/>
+                <filter string="Quotations" name="filter_quotation" domain="[('state', 'in', ('draft', 'quotation'))]"/>
+                <filter string="Closed Contracts" name="filter_closed" domain="[('state', '=', 'closed')]"/>
+                <separator/>
+                <filter string="Paid" name="filter_paid" domain="[('payment_status', '=', 'paid')]"/>
+                <filter string="Pending Payment" name="filter_pending" domain="[('payment_status', '=', 'pending')]"/>
+                <filter string="Overdue" name="filter_overdue" domain="[('payment_status', '=', 'overdue')]"/>
+                <group expand="1" string="Group By">
+                    <filter string="Plan" name="group_by_plan" context="{'group_by': 'plan_id'}"/>
+                    <filter string="Customer" name="group_by_partner" context="{'group_by': 'partner_id'}"/>
+                    <filter string="Status" name="group_by_state" context="{'group_by': 'state'}"/>
+                    <filter string="Payment Status" name="group_by_payment_status" context="{'group_by': 'payment_status'}"/>
+                    <filter string="Billing Unit" name="group_by_unit" context="{'group_by': 'billing_cycle_unit'}"/>
+                    <filter string="Salesperson" name="group_by_user" context="{'group_by': 'user_id'}"/>
+                    <filter string="Start Date" name="group_by_start_date" context="{'group_by': 'start_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action for Subscription Analytics -->
+    <record id="action_subscription_report_all" model="ir.actions.act_window">
+        <field name="name">Subscription Analytics</field>
+        <field name="res_model">subscription.report</field>
+        <field name="view_mode">pivot,graph</field>
+        <field name="search_view_id" ref="view_subscription_report_search"/>
+        <field name="context">{'search_default_filter_active': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Subscription Analytics Dashboard
+            </p>
+            <p>
+                Analyze Monthly Recurring Revenue (MRR), Annual Recurring Revenue (ARR), contract retention, and payment statuses across plans.
+            </p>
+        </field>
+    </record>
+</odoo>

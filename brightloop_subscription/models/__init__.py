@@ -9,3 +9,4 @@ from . import subscription
 from . import account_move
 from . import subscription_billing_wizard
 from . import subscription_discount_rule
+from . import subscription_report

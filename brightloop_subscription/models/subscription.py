@@ -150,6 +150,22 @@ class Subscription(models.Model):
         currency_field='currency_id',
         tracking=True
     )
+    mrr = fields.Monetary(
+        string='Monthly Recurring Revenue',
+        compute='_compute_recurring_revenue',
+        store=True,
+        currency_field='currency_id',
+        tracking=True,
+        help='Normalized recurring revenue earned per month.'
+    )
+    arr = fields.Monetary(
+        string='Annual Recurring Revenue',
+        compute='_compute_recurring_revenue',
+        store=True,
+        currency_field='currency_id',
+        tracking=True,
+        help='Normalized recurring revenue earned per year.'
+    )
     notes = fields.Html(
         string='Terms and Conditions'
     )
@@ -276,6 +292,34 @@ class Subscription(models.Model):
                 'discount_amount': discount_amount,
                 'amount_net': amount_net,
                 'total_quantity': total_qty,
+            })
+
+    @api.depends('amount_net', 'plan_id.billing_cycle_unit', 'plan_id.billing_interval')
+    def _compute_recurring_revenue(self):
+        for sub in self:
+            interval = sub.plan_id.billing_interval or 1
+            unit = sub.plan_id.billing_cycle_unit or 'monthly'
+            amount = sub.amount_net or 0.0
+
+            if unit == 'monthly':
+                mrr = amount / interval
+                arr = mrr * 12.0
+            elif unit == 'yearly':
+                mrr = amount / (12.0 * interval)
+                arr = amount / interval
+            elif unit == 'weekly':
+                mrr = (amount * 52.0) / (12.0 * interval)
+                arr = (amount * 52.0) / interval
+            elif unit == 'daily':
+                mrr = (amount * 30.0) / interval
+                arr = (amount * 365.0) / interval
+            else:
+                mrr = amount
+                arr = amount * 12.0
+
+            sub.update({
+                'mrr': round(mrr, 2),
+                'arr': round(arr, 2),
             })
 
     @api.onchange('template_id')
