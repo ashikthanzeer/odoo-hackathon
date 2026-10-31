@@ -163,13 +163,39 @@ Access control follows the principle of least privilege, providing two role tier
 
 ## Installation & Setup Procedure
 
-### Step 1: Clone the Repository
+### Quickstart with Docker Compose (Recommended)
+
+If you have Docker Desktop installed, you can spin up the complete environment (Odoo 17.0 + PostgreSQL 15) in a single command:
+
+1. **Launch Docker Desktop** on your machine.
+2. **Start the containers** from the project root:
+   ```bash
+   docker compose up -d
+   ```
+3. Open your browser and navigate to:
+   ```
+   http://localhost:8069
+   ```
+4. **Create a Database**:
+   - Master Password: (shown on screen)
+   - Database Name: `brightloop_db`
+   - Email: `admin`
+   - Password: `admin`
+   - (Optional) Check **Demo data** to populate standard demo records.
+5. In Odoo, go to **Apps**, remove the `Apps` search filter, search for `Brightloop Subscription Management`, and click **Activate / Install**.
+
+---
+
+### Manual / Local Setup
+
+#### Step 1: Clone the Repository
 Clone the repository into your custom Odoo addons directory:
 
 ```bash
 cd /path/to/odoo/custom_addons
 git clone https://github.com/ashikthanzeer/odoo-hackathon.git
 ```
+
 
 ### Step 2: Configure `addons_path`
 Ensure your `odoo.conf` file includes the path to this repository:
