@@ -165,10 +165,96 @@ class Subscription(models.Model):
         string='Invoices Count',
         compute='_compute_invoice_count'
     )
+    payment_status = fields.Selection([
+        ('draft', 'Draft / No Invoices'),
+        ('pending', 'Pending Payment'),
+        ('partial', 'Partially Paid'),
+        ('paid', 'Fully Paid'),
+        ('overdue', 'Overdue'),
+    ], string='Payment Status', compute='_compute_payment_metrics', store=True, tracking=True, default='draft', index=True)
+
+    paid_amount = fields.Monetary(
+        string='Paid Amount',
+        compute='_compute_payment_metrics',
+        store=True,
+        currency_field='currency_id',
+        tracking=True
+    )
+    amount_due = fields.Monetary(
+        string='Balance Due',
+        compute='_compute_payment_metrics',
+        store=True,
+        currency_field='currency_id',
+        tracking=True
+    )
+    payment_count = fields.Integer(
+        string='Payments Count',
+        compute='_compute_payment_count'
+    )
 
     def _compute_invoice_count(self):
         for sub in self:
             sub.invoice_count = len(sub.invoice_ids)
+
+    def _get_reconciled_payments(self):
+        """Helper to collect all account.payment records reconciled against the subscription's invoices."""
+        self.ensure_one()
+        payments = self.env['account.payment']
+        for inv in self.invoice_ids:
+            if hasattr(inv, '_get_reconciled_payments'):
+                try:
+                    payments |= inv._get_reconciled_payments()
+                except Exception:
+                    pass
+            if hasattr(inv, 'payment_ids') and inv.payment_ids:
+                payments |= inv.payment_ids
+        return payments
+
+    def _compute_payment_count(self):
+        for sub in self:
+            sub.payment_count = len(sub._get_reconciled_payments())
+
+    @api.depends(
+        'invoice_ids.state',
+        'invoice_ids.payment_state',
+        'invoice_ids.amount_residual',
+        'invoice_ids.amount_total',
+        'invoice_ids.invoice_date_due'
+    )
+    def _compute_payment_metrics(self):
+        for sub in self:
+            posted_invoices = sub.invoice_ids.filtered(lambda inv: inv.state == 'posted')
+            if not posted_invoices:
+                sub.update({
+                    'paid_amount': 0.0,
+                    'amount_due': 0.0,
+                    'payment_status': 'draft',
+                })
+                continue
+
+            paid_amt = sum(inv.amount_total - inv.amount_residual for inv in posted_invoices)
+            due_amt = sum(inv.amount_residual for inv in posted_invoices)
+            today = fields.Date.context_today(sub)
+
+            has_overdue = any(
+                inv.amount_residual > 0 and inv.invoice_date_due and inv.invoice_date_due < today
+                for inv in posted_invoices
+            )
+
+            if has_overdue:
+                status = 'overdue'
+            elif all(inv.payment_state in ('paid', 'in_payment') or inv.amount_residual == 0 for inv in posted_invoices):
+                status = 'paid'
+            elif any(inv.payment_state == 'partial' for inv in posted_invoices) or (paid_amt > 0 and due_amt > 0):
+                status = 'partial'
+            else:
+                status = 'pending'
+
+            sub.update({
+                'paid_amount': max(0.0, paid_amt),
+                'amount_due': max(0.0, due_amt),
+                'payment_status': status,
+            })
 
     @api.depends('line_ids.price_subtotal', 'line_ids.price_tax', 'line_ids.price_total', 'line_ids.quantity', 'discount_rule_id', 'discount_rule_id.discount_type', 'discount_rule_id.discount_value', 'discount_rule_id.active')
     def _compute_amounts(self):
@@ -395,6 +481,43 @@ class Subscription(models.Model):
             action['res_id'] = self.invoice_ids.id
         return action
 
+    def action_view_payments(self):
+        """Smart button action to view all customer payments reconciled against this subscription's invoices."""
+        self.ensure_one()
+        payments = self._get_reconciled_payments()
+        action = self.env['ir.actions.act_window']._for_xml_id('account.action_account_payments')
+        action['domain'] = [('id', 'in', payments.ids)]
+        action['context'] = {'default_partner_id': self.partner_id.id}
+        if len(payments) == 1:
+            action['views'] = [(self.env.ref('account.view_account_payment_form').id, 'form')]
+            action['res_id'] = payments.id
+        return action
+
+    def action_renew(self):
+        """Renew the subscription contract for another cycle duration if the plan permits."""
+        for sub in self:
+            if not sub.plan_id.allow_renewal:
+                raise ValidationError(_(
+                    'Policy Restriction: Plan "%s" does not allow renewing subscriptions.'
+                ) % sub.plan_id.name)
+            if sub.state not in ('active', 'paused', 'closed'):
+                raise UserError(_('Only active, paused, or closed subscriptions can be renewed.'))
+
+            base_date = sub.expiry_date or fields.Date.context_today(sub)
+            next_expiry = sub.plan_id.calculate_next_date(base_date)
+
+            vals = {'expiry_date': next_expiry}
+            if sub.state == 'closed':
+                vals['state'] = 'active'
+                if not sub.next_billing_date or sub.next_billing_date < fields.Date.context_today(sub):
+                    vals['next_billing_date'] = fields.Date.context_today(sub)
+
+            sub.write(vals)
+            sub.message_post(
+                body=_('Subscription successfully renewed until %s.') % next_expiry,
+                message_type='notification'
+            )
+
     @api.model
     def _cron_recurring_create_invoices(self):
         """Automated daily cron method to process all due subscriptions."""
@@ -415,3 +538,37 @@ class Subscription(models.Model):
 
         _logger.info('Recurring Billing Cron: Generated %d customer invoices.', len(generated_invoices))
         return len(generated_invoices)
+
+    @api.model
+    def _cron_process_contract_expiries(self):
+        """Automated daily cron method to evaluate active subscriptions reaching their expiry date."""
+        today = fields.Date.context_today(self)
+        expired_subs = self.search([
+            ('state', '=', 'active'),
+            ('expiry_date', '!=', False),
+            ('expiry_date', '<=', today),
+        ])
+        _logger.info('Contract Expiry Cron: Found %d active subscriptions past or on expiry date as of %s.', len(expired_subs), today)
+
+        closed_count = 0
+        for sub in expired_subs:
+            sub._compute_payment_metrics()
+            if sub.plan_id.auto_close_on_end:
+                if sub.amount_due <= 0.0 or sub.payment_status in ('paid', 'draft'):
+                    sub.write({'state': 'closed'})
+                    sub.message_post(
+                        body=_('Subscription auto-closed upon contract expiry date (%s) with zero balance.') % sub.expiry_date,
+                        message_type='notification'
+                    )
+                    closed_count += 1
+                else:
+                    sub.message_post(
+                        body=_(
+                            'Notice: Contract reached expiry date (%s) with an outstanding balance of %s. '
+                            'Automatic closure prevented until outstanding invoices are settled.'
+                        ) % (sub.expiry_date, sub.amount_due),
+                        message_type='notification'
+                    )
+
+        _logger.info('Contract Expiry Cron: Closed %d expired subscriptions.', closed_count)
+        return closed_count
